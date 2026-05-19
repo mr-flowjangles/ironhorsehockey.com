@@ -28,6 +28,7 @@ The framework that *produces* `dist/` is deliberately left open — anything tha
 
 ### Changed
 
+- **`CLAUDE.md`** — Tech-choices "Deployment" row rewritten. The starter pack's locked claim of "Docker image; AWS via Terraform" was incompatible with the static-site direction (no runtime container); the row now describes the actual S3+CloudFront+ACM+Route53 path and flags the `Dockerfile` as a stub that may be removed in M0. Site shape is added as an explicit locked choice.
 - **`docs/07-build-plan.md`** — M0 expanded with AWS plumbing tasks; explicitly notes the site is **static** and the framework choice is design's job; bootstrap-commit tasks marked complete.
 - **`.gitignore`** — Terraform patterns made recursive (`infra/terraform/**/…`); `.terraform.lock.hcl` removed from the ignore list (now committed); `.tfvars` exception switched to the more standard `*.tfvars.example`.
 - **`infra/terraform/README.md`** — rewritten from placeholder to describe the two-stack layout, first-time setup, and what's deliberately not here (CI/CD, staging, image registry).
@@ -40,6 +41,7 @@ The framework that *produces* `dist/` is deliberately left open — anything tha
 
 | File | Change |
 |------|--------|
+| `CLAUDE.md` | Tech-choices "Deployment" row rewritten for static-site path; site shape added |
 | `docs/07-build-plan.md` | Expanded M0 with AWS plumbing tasks; marked bootstrap-commit items complete |
 | `.gitignore` | Recursive Terraform patterns; lock file now committed |
 | `Makefile` | Added `bootstrap-*`, `tf-*`, `placeholder`, `deploy` targets |
