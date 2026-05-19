@@ -107,8 +107,8 @@ build: ## Copy site/ → dist/ (no bundler — site is already deployable)
 	cp -R site/. dist/
 	@echo "Built dist/ from site/."
 
-serve: build ## Build and serve dist/ locally on http://localhost:8000
-	@cd dist && python3 -m http.server 8000
+serve: build ## Build and serve dist/ locally on http://localhost:7777
+	@cd dist && python3 -m http.server 7777
 
 deploy: build ## Build then sync dist/ to S3 + invalidate CloudFront
 	@BUCKET=$$(terraform -chdir=$(TF_PROD) output -raw site_bucket) && \

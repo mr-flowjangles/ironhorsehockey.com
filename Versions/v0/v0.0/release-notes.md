@@ -24,7 +24,7 @@ The build is a `cp` — no bundler. React and Babel load from CDN; JSX is transp
   - `site/assets/ironhorse-*.{png,jpg}` — five logo variants (full mark, transparent mark, cropped logo, etc.)
 - **`assets/brand/logo-on-dark-preview.png`** — additional brand reference from design-Claude (preview of the logo on the dark theme).
 - **`make build`** — `rm -rf dist && cp -R site/. dist/`. Clean separation from `deploy` so a future bundler can replace `build` without changing the deploy semantics.
-- **`make serve`** — `make build && (cd dist && python3 -m http.server 8000)`. Local sanity-check loop.
+- **`make serve`** — `make build && (cd dist && python3 -m http.server 7777)`. Local sanity-check loop.
 
 ### Changed
 
