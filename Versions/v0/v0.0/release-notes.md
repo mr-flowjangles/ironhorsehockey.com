@@ -1,5 +1,39 @@
 # v0.0
 
+## v0.0.2 — Design Inputs (2026-05-19)
+
+### Problem
+
+The plumbing in v0.0.1 was framework-agnostic on purpose — it could serve any `dist/`. But design-Claude needs to know what brand they're building for: colors, logo treatment, audience, tone, and what's locked vs. open. Without those inputs, design discovery starts from scratch every session.
+
+### Solution
+
+Land a brand reference image and a tight written brief that capture what Rob has already given verbally. The flyer goes in `assets/brand/` as the canonical visual source of truth. `docs/brand-brief.md` summarizes what design-Claude can read off the flyer (colors, type vibe, mood) and what Rob has said directly (audience: "people wanting to up their hockey skills"; constraints: none right now). `docs/99-open-questions.md` is populated with the real deferrals (framework choice, content scope, CI, accessibility, future backend).
+
+This is *seed* material — design-Claude still owns mission, overview, architecture, framework, and IA. The brief explicitly stops short of preempting those.
+
+### New
+
+- **`assets/brand/reference-flyer.jpg`** — the IronHorse Hockey Academy summer camp flyer. Source of truth for visual identity (logo, palette, type direction, mood).
+- **`docs/brand-brief.md`** — written brief covering the brand name + tagline, the colors and typography vibe read from the flyer, audience, what the site is probably for, and an explicit list of what design-Claude still owns.
+
+### Changed
+
+- **`docs/99-open-questions.md`** — populated with five real open questions: framework choice, content scope, CI/CD timing, accessibility floor, future backend needs. Each has status + resolution trigger + notes per the file's own format.
+
+### Fixed
+
+- Nothing — additive only.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `assets/brand/reference-flyer.jpg` | New — canonical brand reference image |
+| `docs/brand-brief.md` | New — written brand brief for design-Claude |
+| `docs/99-open-questions.md` | Populated with five open questions |
+| `Versions/v0/v0.0/release-notes.md` | New H2 stub for v0.0.2, filled in |
+
 ## v0.0.1 — AWS Plumbing (2026-05-19)
 
 ### Problem
