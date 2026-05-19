@@ -4,7 +4,8 @@
 # Targets that produce no files are .PHONY so make doesn't try to track them.
 
 .DEFAULT_GOAL := help
-.PHONY: help setup test lint format ci image smoke clean version version-minor version-major
+.PHONY: help setup test lint format ci image smoke clean version version-minor version-major \
+        bootstrap-init bootstrap-apply tf-init tf-plan tf-apply tf-output placeholder deploy
 
 # ---------------------------------------------------------------------------
 # Help
@@ -58,6 +59,64 @@ image: ## Build the runtime Docker image
 
 smoke: ## Smoke-test the built image (override CMD as appropriate for your tool)
 	docker run --rm bellese/ironhorsehockey.com:dev --help
+
+# ---------------------------------------------------------------------------
+# AWS infrastructure (Terraform)
+#
+# Two stacks under infra/terraform/:
+#   bootstrap/  — S3 state bucket + DynamoDB lock (one-time, local state)
+#   prod/       — Route 53, ACM, S3 origin, CloudFront (remote state)
+#
+# Set AWS_PROFILE before running anything that touches AWS.
+# ---------------------------------------------------------------------------
+
+TF_BOOTSTRAP := infra/terraform/bootstrap
+TF_PROD      := infra/terraform/prod
+
+bootstrap-init: ## Initialize the bootstrap (state-backend) stack
+	terraform -chdir=$(TF_BOOTSTRAP) init
+
+bootstrap-apply: ## Apply the bootstrap stack (creates state bucket + lock table)
+	terraform -chdir=$(TF_BOOTSTRAP) apply
+
+tf-init: ## Initialize the prod stack (uses bootstrap bucket as remote backend)
+	terraform -chdir=$(TF_PROD) init
+
+tf-plan: ## Plan changes to prod infrastructure
+	terraform -chdir=$(TF_PROD) plan
+
+tf-apply: ## Apply prod infrastructure changes
+	terraform -chdir=$(TF_PROD) apply
+
+tf-output: ## Show outputs from the prod stack (nameservers, bucket, distribution id)
+	terraform -chdir=$(TF_PROD) output
+
+# ---------------------------------------------------------------------------
+# Site deploy
+#
+# `dist/` is the deploy artifact — whatever the static-site framework emits.
+# Pre-framework (M0), `make placeholder` populates dist/ from placeholder/
+# so the deploy path can be exercised end-to-end.
+# ---------------------------------------------------------------------------
+
+placeholder: ## Copy placeholder/ → dist/ (used pre-framework to prove the deploy path)
+	rm -rf dist
+	mkdir -p dist
+	cp -R placeholder/. dist/
+	@echo "Populated dist/ from placeholder/."
+
+deploy: ## Sync dist/ to the prod S3 origin + invalidate CloudFront
+	@if [ ! -d dist ] || [ -z "$$(ls -A dist 2>/dev/null)" ]; then \
+	  echo "dist/ is empty. Run 'make placeholder' or your framework's build first."; \
+	  exit 1; \
+	fi
+	@BUCKET=$$(terraform -chdir=$(TF_PROD) output -raw site_bucket) && \
+	 DIST_ID=$$(terraform -chdir=$(TF_PROD) output -raw cloudfront_distribution_id) && \
+	 echo "Syncing dist/ → s3://$$BUCKET/" && \
+	 aws s3 sync dist/ s3://$$BUCKET/ --delete && \
+	 echo "Invalidating CloudFront distribution $$DIST_ID" && \
+	 aws cloudfront create-invalidation --distribution-id $$DIST_ID --paths '/*' >/dev/null && \
+	 echo "Deployed."
 
 # ---------------------------------------------------------------------------
 # Cleanup
