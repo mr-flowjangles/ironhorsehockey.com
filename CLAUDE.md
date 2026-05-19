@@ -117,7 +117,8 @@ make version-M1                       # minor bump, title auto-resolved from doc
 
 <!-- Fill these in after stack decisions are made. Keep this section short and definitive. -->
 
-- Language: TBD
-- Framework: TBD
-- Deployment: Docker image; AWS via Terraform (`infra/terraform/`)
-- LLM (if applicable): TBD
+- Language: TBD (whatever the chosen static-site framework requires for its build step)
+- Framework: TBD — a static-site generator (Astro, 11ty, Hugo, plain HTML, …). Picked during design.
+- Site shape: **static site** — pre-rendered HTML/CSS/JS, no server-side runtime.
+- Deployment: AWS via Terraform (`infra/terraform/bootstrap/` + `infra/terraform/prod/`). Static assets served from S3 behind CloudFront with an ACM cert and Route 53 DNS. No Docker image is part of the runtime path; the repo's `Dockerfile` is a stub that may be removed in M0.
+- LLM (if applicable): N/A — static site.
