@@ -5,7 +5,7 @@
 
 .DEFAULT_GOAL := help
 .PHONY: help setup test lint format ci image smoke clean version version-minor version-major \
-        bootstrap-init bootstrap-apply tf-init tf-plan tf-apply tf-output placeholder deploy
+        bootstrap-init bootstrap-apply tf-init tf-plan tf-apply tf-output build serve deploy
 
 # ---------------------------------------------------------------------------
 # Help
@@ -92,24 +92,25 @@ tf-output: ## Show outputs from the prod stack (nameservers, bucket, distributio
 	terraform -chdir=$(TF_PROD) output
 
 # ---------------------------------------------------------------------------
-# Site deploy
+# Site build + deploy
 #
-# `dist/` is the deploy artifact — whatever the static-site framework emits.
-# Pre-framework (M0), `make placeholder` populates dist/ from placeholder/
-# so the deploy path can be exercised end-to-end.
+# `site/` is the deployable source. It's a no-bundler static site
+# (React + Babel-in-browser, loaded as plain script tags). `make build`
+# copies site/ → dist/. `make deploy` syncs dist/ → S3 + invalidates
+# CloudFront. The two are split so a future bundler can slot in at the
+# build step without changing deploy.
 # ---------------------------------------------------------------------------
 
-placeholder: ## Copy placeholder/ → dist/ (used pre-framework to prove the deploy path)
+build: ## Copy site/ → dist/ (no bundler — site is already deployable)
 	rm -rf dist
 	mkdir -p dist
-	cp -R placeholder/. dist/
-	@echo "Populated dist/ from placeholder/."
+	cp -R site/. dist/
+	@echo "Built dist/ from site/."
 
-deploy: ## Sync dist/ to the prod S3 origin + invalidate CloudFront
-	@if [ ! -d dist ] || [ -z "$$(ls -A dist 2>/dev/null)" ]; then \
-	  echo "dist/ is empty. Run 'make placeholder' or your framework's build first."; \
-	  exit 1; \
-	fi
+serve: build ## Build and serve dist/ locally on http://localhost:8000
+	@cd dist && python3 -m http.server 8000
+
+deploy: build ## Build then sync dist/ to S3 + invalidate CloudFront
 	@BUCKET=$$(terraform -chdir=$(TF_PROD) output -raw site_bucket) && \
 	 DIST_ID=$$(terraform -chdir=$(TF_PROD) output -raw cloudfront_distribution_id) && \
 	 echo "Syncing dist/ → s3://$$BUCKET/" && \

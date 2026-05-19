@@ -1,5 +1,78 @@
 # v0.0
 
+## v0.0.3 — Initial Site (2026-05-19)
+
+### Problem
+
+The v0.0.1 plumbing was serving a placeholder page. Design-Claude delivered an IronHorse Hockey Academy site (single-page React app: hero, mission, schedule, register, footer + a runtime "tweaks panel" for palette/font/grit/scanline exploration) in a separate folder at `~/Downloads/ironghorsehockey.com/`. That folder needed to land in the repo, get wired into the existing build/deploy targets, and have its scratch material (design iteration uploads, cache-buster filename artifacts) filtered out before `git add` slurped them.
+
+### Solution
+
+Cut a `site/` directory as the deployable source root and copy in design-Claude's `index.html`, `styles.css`, `tweaks-panel.jsx`, `assets/` (five logo variants), and `src/` (eight JSX section components). Skip the cache-buster artifact `hero.jsx?v=2` (literal `?` in filename — an accident of in-browser dev tooling; the active file is `hero.jsx`). Skip the `uploads/` scratch directory and duplicates of the flyer already living in `assets/brand/`. Add `assets/brand/logo-on-dark-preview.png` since it's a genuinely new brand-reference asset.
+
+Update `.gitignore` *first* (per Rob's instruction) with `uploads/` and `*\?*` so future drops can't accidentally bring scratch back in. Wire `make build` (copies `site/` → `dist/`) and `make serve` (build + `python3 -m http.server`) into the Makefile, point `make deploy` at the new build step, and drop the obsolete `make placeholder` target along with the `placeholder/` directory and the top-level `src/.gitkeep`.
+
+The build is a `cp` — no bundler. React and Babel load from CDN; JSX is transpiled in the browser. Documented as a known issue to revisit in a later version.
+
+### New
+
+- **`site/`** — deployable source root for the static site.
+  - `site/index.html` — React mount + CDN scripts + tweak-defaults block
+  - `site/styles.css` — 33 KB of handcrafted CSS (4 palette themes via CSS variables, grain/scanline overlays, IHA chevron/grit motifs)
+  - `site/tweaks-panel.jsx` — runtime tweaks UI (palette, display font, grit, scanlines)
+  - `site/src/{app,nav,hero,about,schedule,register,footer,icons}.jsx` — page sections
+  - `site/assets/ironhorse-*.{png,jpg}` — five logo variants (full mark, transparent mark, cropped logo, etc.)
+- **`assets/brand/logo-on-dark-preview.png`** — additional brand reference from design-Claude (preview of the logo on the dark theme).
+- **`make build`** — `rm -rf dist && cp -R site/. dist/`. Clean separation from `deploy` so a future bundler can replace `build` without changing the deploy semantics.
+- **`make serve`** — `make build && (cd dist && python3 -m http.server 8000)`. Local sanity-check loop.
+
+### Changed
+
+- **`.gitignore`** — added `uploads/` (design scratch) and `*\?*` (cache-buster filename artifacts). These went in *before* the file move so a later `git add -A` couldn't smuggle them.
+- **`Makefile`** — `make placeholder` removed (real site supersedes the placeholder); `make build` and `make serve` added; `make deploy` now builds first and syncs `dist/` produced by `make build` instead of from a hand-populated `dist/`.
+- **`docs/07-build-plan.md`** — M0 status updated: Makefile targets and "land design-Claude's site" boxes checked; versioning ceremony marked complete; two new open items added explicitly (Babel-in-browser → bundler migration, logo PNG optimization).
+
+### Fixed
+
+- Stale placeholder was still on disk after the real site was ready. Removed `placeholder/index.html`, `placeholder/404.html`, the directory, and the corresponding Makefile target.
+
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `.gitignore` | Added `uploads/` + `*\?*` patterns |
+| `Makefile` | Dropped `make placeholder`; added `make build` + `make serve`; `make deploy` now builds first |
+| `docs/07-build-plan.md` | M0 checkboxes and Done-when updated; two new known items |
+| `assets/brand/logo-on-dark-preview.png` | New — additional brand reference |
+| `site/index.html` | New — React mount + CDN scripts |
+| `site/styles.css` | New — 33 KB hand-crafted styles, 4 palettes via CSS vars |
+| `site/tweaks-panel.jsx` | New — runtime palette/font/grit tweak UI |
+| `site/src/app.jsx` | New — top-level `<App />`, palette+font effect, scroll-spy |
+| `site/src/nav.jsx` | New — sticky nav with active-section highlight |
+| `site/src/hero.jsx` | New — hero section + marquee |
+| `site/src/about.jsx` | New — mission/about block |
+| `site/src/schedule.jsx` | New — camp schedule block |
+| `site/src/register.jsx` | New — registration block (Venmo + email) |
+| `site/src/footer.jsx` | New — footer |
+| `site/src/icons.jsx` | New — inline SVG icons |
+| `site/assets/ironhorse-logo.png` | New — primary logo (1.7 MB) |
+| `site/assets/ironhorse-logo.jpg` | New — JPEG variant (255 KB) |
+| `site/assets/ironhorse-logo-cropped.png` | New — cropped logo (2.2 MB) |
+| `site/assets/ironhorse-mark.png` | New — mark only (2.0 MB) |
+| `site/assets/ironhorse-mark-transparent.png` | New — transparent mark (1.6 MB) |
+| `placeholder/index.html` | Removed |
+| `placeholder/404.html` | Removed |
+| `src/.gitkeep` | Removed (top-level `src/` was a starter convention; deployable now lives at `site/`) |
+| `Versions/v0/v0.0/release-notes.md` | New H2 stub for v0.0.3, filled in |
+
+### Known issues / notes
+
+- **No bundler.** React + Babel load from `unpkg.com` and JSX is transpiled in the browser at runtime. Production-functional but slower than a built site and depends on CDN availability. Tracked as an open M0 item; migration target is a real bundler (Vite or esbuild) that emits the same `dist/` shape.
+- **Logo asset sizes are heavy.** Five PNGs in `site/assets/` total ~7 MB; the largest is 2.2 MB. Compressed WebPs + intrinsic-size discipline would cut this to under 500 KB. Tracked in the build plan.
+- **Design docs still aren't written.** `docs/mission.md`, `docs/00-overview.md`, `docs/01-architecture.md` are still template stubs. Design-Claude delivered code but not those — the project's "design before code" norm is locally inverted for this version, on purpose, because the code IS the design exercise. Backfill before v1.
+- **`tweaks-panel.jsx` ships to production.** It's a runtime developer tool (palette/font/grit live-editing). Harmless from a correctness standpoint but represents ~26 KB of JS and a visible UI affordance on the live site. Decide later whether to gate it behind a query string, strip it at build time, or keep it as a public feature.
+- **First production deploy still pending.** `make build && make deploy` will work end-to-end once Terraform is applied and the registrar nameserver cutover lands. Both are tracked in M0.
+
 ## v0.0.2 — Design Inputs (2026-05-19)
 
 ### Problem

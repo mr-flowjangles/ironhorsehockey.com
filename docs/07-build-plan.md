@@ -28,18 +28,19 @@ Site shape is **static** — pre-rendered HTML/CSS/JS served from S3 behind Clou
 - [x] Fill in `Versions/v0/v0.0/release-notes.md` for the bootstrap commit (v0.0.0).
 - [ ] **AWS plumbing — Terraform bootstrap.** `infra/terraform/bootstrap/` — S3 state bucket (versioned, encrypted, public-access blocked) + DynamoDB lock table in AWS account `255977230735` (alias `rrose`), `us-east-1`. One-time hand-apply with local state; documents the bucket/table names for the main stack's remote backend.
 - [ ] **AWS plumbing — main stack.** `infra/terraform/prod/` — Route 53 hosted zone for `ironhorsehockey.com`, ACM cert (DNS-validated, `us-east-1` for CloudFront), private S3 origin bucket with OAC, CloudFront distribution with sensible cache + security headers, alias records for apex and `www`. Backend points at the bootstrap state bucket. Outputs: nameservers (to paste at the current registrar), distribution ID, bucket name.
-- [ ] **AWS plumbing — Makefile targets.** `make tf-init` / `make tf-plan` / `make tf-apply`, and `make deploy` (sync `dist/` → S3 + CloudFront invalidation).
-- [ ] **AWS plumbing — placeholder `index.html`.** Drop a minimal `dist/index.html` so the deploy path can be exercised end-to-end before design-Claude arrives. Real framework + content land in a later version.
+- [x] **AWS plumbing — Makefile targets.** `make tf-init` / `make tf-plan` / `make tf-apply`, and `make build` + `make deploy` (build = `site/` → `dist/`; deploy = sync `dist/` → S3 + CloudFront invalidation).
+- [x] **Land design-Claude's site under `site/`.** v0.0.3 brought the React-on-CDN static site into the repo. `make build && make serve` serves locally on `:8000`.
 - [ ] **AWS plumbing — nameserver cutover.** Rob updates nameservers at the current registrar to the four NS records output by Terraform. Not a code step — flagged here as the human handoff that has to happen before HTTPS works.
-- [ ] Add language/build manifest (`package.json` / similar) once the static-site framework is chosen.
-- [ ] Wire up `make setup` / `make build` / `make test` / `make lint` / `make format` to the chosen toolchain (replace the stubs in `Makefile`).
-- [ ] Verify `make ci` passes on an empty test suite.
-- [ ] Replace the `Dockerfile` stub with a real build stage that emits `dist/` (or remove it — for a pure static site the artifact is `dist/`, not a runtime image; revisit during design).
-- [ ] Verify versioning ceremony: `./scripts/new-version.sh --dry-run "Smoke Test"` prints the plan without side effects.
-- [ ] Fill in `docs/mission.md` and `docs/00-overview.md`.
-- [ ] Sketch `docs/01-architecture.md` — at minimum, identify the contract artifact (likely the built `dist/` itself for a static site).
+- [ ] **First production deploy.** `make build && make deploy` against the applied Terraform — only meaningful once Terraform is applied and DNS is delegated.
+- [ ] **Replace Babel-in-browser with a real build step.** The current setup loads React + Babel from CDN and transpiles JSX in the browser — fine for iteration, but slow + flaky for production. Migration target: a bundler (Vite/esbuild/etc.) that emits the same `dist/` shape. Until then, `make build` is a `cp`.
+- [ ] **Optimize logo asset sizes.** `site/assets/ironhorse-*` PNGs are 1.6–2.2 MB each (7 MB total). Target ~500 KB total with WebP + intrinsic sizes for hero use only.
+- [ ] Verify `make ci` passes on an empty test suite (still pending — `lint`/`test` are stubs).
+- [ ] Replace or remove the `Dockerfile` stub. (Decision per `CLAUDE.md`: remove — static site has no runtime image.)
+- [x] Verify versioning ceremony: `./scripts/new-version.sh --dry-run "Smoke Test"` prints the plan without side effects. (Implicitly exercised every PR.)
+- [ ] Fill in `docs/mission.md` and `docs/00-overview.md`. (Design-Claude delivered code but not these — backfill before v1.)
+- [ ] Sketch `docs/01-architecture.md` — at minimum, identify the contract artifact (the built `dist/` is the artifact for a static site; the JSX section-component shape is its internal contract).
 
-**Done when:** project builds, AWS Terraform stacks apply cleanly, placeholder `index.html` is reachable at `https://ironhorsehockey.com`, Docker decision is made, versioning ceremony runs cleanly, mission/overview/architecture have v1 content.
+**Done when:** project builds, AWS Terraform stacks apply cleanly, the site is reachable at `https://ironhorsehockey.com`, the Docker stub is gone, versioning ceremony runs cleanly, mission/overview/architecture have v1 content.
 
 ---
 

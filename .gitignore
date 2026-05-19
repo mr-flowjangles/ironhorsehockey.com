@@ -47,3 +47,10 @@ infra/terraform/**/*.tfstate.backup
 infra/terraform/**/*.tfvars
 !infra/terraform/**/*.tfvars.example
 # .terraform.lock.hcl is intentionally committed (provider version pinning).
+
+# Design scratch — anything under uploads/ is iteration material, not deployable.
+uploads/
+
+# Cache-buster filename artifacts (e.g., `hero.jsx?v=2`) from in-browser dev tooling.
+# Real cache-busting belongs on the URL in a <script src="…?v=N">, not the file on disk.
+*\?*
